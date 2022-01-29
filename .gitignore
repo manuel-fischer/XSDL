@@ -1,0 +1,87 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Output directories
+bin/*
+
+# Code::Blocks files
+*.depend
+*.layout
+*.cscope_file_list
+
+# Disassembly for debugging
+*.dis
+
+# Screenshots
+screenshots/scr-*
+
+# Debug output files
+dbg_*
+
+
+# Ignore Doxygen for now
+doxygen/*
+*.bmarks
+!doxygen/doxyfile
+
+# Log output
+*.log
+
+# CBake files
+.cbake-dependencies.txt
+.cbake-dependencies-dbg.txt
+
+
+# Libraries, backup if libs/.gitignore gets deleted accidentally
+libs/**
+!libs/.gitignore
