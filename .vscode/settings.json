@@ -41,12 +41,12 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "ranges": "cpp"
     },
     "C_Cpp.default.defines": [
         "__WINNT__",
         "_POSIX_C_SOURCE=200101L",
-        "HTL_PARAM"
     ],
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/include",
@@ -54,7 +54,8 @@
     ],
     "C_Cpp.default.compilerArgs": [
         "-Wno-unused-parameter",
-        "-fmacro-prefix-map=${workspaceFolder}=."
+        "-fmacro-prefix-map=${workspaceFolder}=.",
+        "-std=c++2a",
     ],
     "terminal.integrated.defaultProfile.windows": "PowerShell"
 }

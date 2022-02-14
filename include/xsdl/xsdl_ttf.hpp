@@ -23,5 +23,7 @@ namespace xsdl
         surface shaded(const char* text, color fg, color bg) const;
         surface blended(const char* text, color fg) const;
         surface blended_wrapped(const char* text, color fg, int) const;
+
+        SDL_Point size(const char* text) const;
     };
 }

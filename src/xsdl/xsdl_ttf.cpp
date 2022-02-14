@@ -42,4 +42,11 @@ namespace xsdl
     {
         return surface(err_check(TTF_RenderUTF8_Blended_Wrapped(ptr, text, fg, wrap_length), "TTF_RenderUTF8_Blended_Wrapped"));
     }
+
+    SDL_Point font::size(const char* text) const
+    {
+        SDL_Point ret;
+        TTF_SizeUTF8(ptr, text, &ret.x, &ret.y);
+        return ret;
+    }
 }

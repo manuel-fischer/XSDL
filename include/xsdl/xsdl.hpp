@@ -74,7 +74,8 @@ namespace xsdl
         clsname(const clsname&) = delete; \
         clsname(ptr_type p): ptr(p) {} \
         ptr_type get() { return ptr; } \
-        ptr_type get_noconst() const { return ptr; }
+        ptr_type get_noconst() const { return ptr; } \
+        operator bool() const { return ptr != nullptr; }
 
 
     template<class T>
@@ -116,6 +117,9 @@ namespace xsdl
         void present() noexcept;
         [[nodiscard]]
         painter paint(const texture&, std::optional<SDL_Rect> srcrect=std::nullopt);
+
+        void fill(SDL_Rect rect);
+        void frame(SDL_Rect rect, int width);
     };
 
 
@@ -132,8 +136,8 @@ namespace xsdl
 
     struct painter
     {
-        renderer* renderer;
-        const texture* texture;
+        renderer* the_renderer;
+        const texture* the_texture;
         std::optional<SDL_Rect> srcrect;
 
         painter at(std::optional<SDL_Rect> dstrect=std::nullopt);
@@ -150,8 +154,13 @@ namespace xsdl
                     SDL_RendererFlip flip=SDL_RendererFlip::SDL_FLIP_NONE);
     };
 
+    struct sdl_hint
+    {
+        const char* name;
+        const char* value;
+    };
     
-    std::pair<window, renderer> create_window_and_renderer(int w, int h, flags);
+    std::pair<window, renderer> create_window_and_renderer(int w, int h, flags, std::initializer_list<sdl_hint> hints={});
 
 
     
@@ -164,4 +173,12 @@ namespace xsdl
 
         SDL_Point size() const noexcept;
     };
+
+
+
+    inline constexpr bool point_in_rect(SDL_Point p, SDL_Rect r)
+    {
+        return r.x <= p.x && p.x < r.x+r.w
+            && r.y <= p.y && p.y < r.y+r.h;
+    }
 }

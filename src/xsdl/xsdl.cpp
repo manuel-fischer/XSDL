@@ -100,9 +100,25 @@ namespace xsdl
         return {this, &texture, srcrect};
     }
 
+    void renderer::fill(SDL_Rect rect)
+    {
+        SDL_RenderFillRect(get(), &rect);
+    }
+
+    void renderer::frame(SDL_Rect rect, int width)
+    {
+        SDL_Rect rects[4] {
+            {rect.x, rect.y, rect.w, width},
+            {rect.x, rect.y+rect.h-width, rect.w, width},
+            {rect.x, rect.y+width, width, rect.h-2*width},
+            {rect.x+rect.w-width, rect.y+width, width, rect.h-2*width},
+        };
+        SDL_RenderFillRects(get(), rects, 4);
+    }
+
     painter painter::at(std::optional<SDL_Rect> dstrect)
     {
-        int_check(SDL_RenderCopy(renderer->get(), texture->get_noconst(), opt2ptr(srcrect), opt2ptr(dstrect)), "SDL_RenderCopy");
+        int_check(SDL_RenderCopy(the_renderer->get(), the_texture->get_noconst(), opt2ptr(srcrect), opt2ptr(dstrect)), "SDL_RenderCopy");
         return *this;
     }
 
@@ -111,14 +127,14 @@ namespace xsdl
                         std::optional<SDL_Point> center,
                         SDL_RendererFlip flip)
     {
-        int_check(SDL_RenderCopyEx(renderer->get(), texture->get_noconst(), opt2ptr(srcrect), opt2ptr(dstrect), angle, opt2ptr(center), flip), "SDL_RenderCopyEx");
+        int_check(SDL_RenderCopyEx(the_renderer->get(), the_texture->get_noconst(), opt2ptr(srcrect), opt2ptr(dstrect), angle, opt2ptr(center), flip), "SDL_RenderCopyEx");
         return *this;
     }
 
 
     painter painter::atf(std::optional<SDL_FRect> dstrect)
     {
-        int_check(SDL_RenderCopyF(renderer->get(), texture->get_noconst(), opt2ptr(srcrect), opt2ptr(dstrect)), "SDL_RenderCopy");
+        int_check(SDL_RenderCopyF(the_renderer->get(), the_texture->get_noconst(), opt2ptr(srcrect), opt2ptr(dstrect)), "SDL_RenderCopy");
         return *this;
     }
 
@@ -127,7 +143,7 @@ namespace xsdl
                          std::optional<SDL_FPoint> center,
                          SDL_RendererFlip flip)
     {
-        int_check(SDL_RenderCopyExF(renderer->get(), texture->get_noconst(), opt2ptr(srcrect), opt2ptr(dstrect), angle, opt2ptr(center), flip), "SDL_RenderCopyEx");
+        int_check(SDL_RenderCopyExF(the_renderer->get(), the_texture->get_noconst(), opt2ptr(srcrect), opt2ptr(dstrect), angle, opt2ptr(center), flip), "SDL_RenderCopyEx");
         return *this;
     }
 
@@ -135,8 +151,11 @@ namespace xsdl
 
 
 
-    std::pair<window, renderer> create_window_and_renderer(int w, int h, flags flags)
+    std::pair<window, renderer> create_window_and_renderer(int w, int h, flags flags, std::initializer_list<sdl_hint> hints)
     {
+        for(sdl_hint hint : hints)
+            SDL_SetHint(hint.name, hint.value);
+
         SDL_Window* window;
         SDL_Renderer* renderer;
 

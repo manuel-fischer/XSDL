@@ -24,7 +24,7 @@ namespace xsdl
         line_pixels.front() = line_pixels.back() = (class color){color.r, color.g, color.b, 0}.premultiply_if(premultiply);
 
         return pen{
-            .renderer = &renderer,
+            .the_renderer = &renderer,
             .internal_width = width+2,
             .line_crosssection = texture(renderer, xsdl::surface::from_data(1, line_pixels.size(), line_pixels.data()))
         };
@@ -50,7 +50,7 @@ namespace xsdl
         line_pixels.front() = line_pixels.back() = (class color){color.r, color.g, color.b, 0}.premultiply_if(premultiply);
 
         return pen{
-            .renderer = &renderer,
+            .the_renderer = &renderer,
             .internal_width = width+2,
             .line_crosssection = texture(renderer, xsdl::surface::from_data(1, line_pixels.size(), line_pixels.data()))
         };
@@ -64,6 +64,6 @@ namespace xsdl
 
         //SDL_FRect dst = { (x0+x1)/2.f-length/2.f, (y0+y1)/2.f-internal_width/2.f, length, internal_width};
         SDL_FRect dst = { (x0+x1-length)/2.f, (y0+y1-internal_width)/2.f, length, internal_width};
-        renderer->paint(line_crosssection).atf(dst, angle/M_PI*180.f);
+        the_renderer->paint(line_crosssection).atf(dst, angle/M_PI*180.f);
     }
 }

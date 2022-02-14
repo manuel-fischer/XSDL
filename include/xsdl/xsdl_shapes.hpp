@@ -6,7 +6,7 @@ namespace xsdl
 {
     struct pen
     {
-        renderer* renderer;
+        renderer* the_renderer;
         int internal_width;
         texture line_crosssection;
 
