@@ -49,6 +49,7 @@ namespace gnote
             .background = { 20,  20,  20, 255},
             .padding = { .left = 5 },
         };
+        xgui::flex_style textbox_flex = { 100, 100 };
 
         xgui::composite_style main_style
         {
@@ -86,7 +87,7 @@ namespace gnote
 
 
         xgui::label   lblTitle   = { this, {.h = 50}, "Sample program",   &app_style::label_flex,    &app_style::big_label_style };
-        xgui::textbox txtTextbox = { this, {},        "Sample Text",      &app_style::textbox_style, &app_style::textbox_style };
+        xgui::textbox txtTextbox = { this, {},        "Sample Text",      &app_style::textbox_flex, &app_style::textbox_style };
 
         xgui::composite button_bar = { this, {.h = 30}, &app_style::bar_flex, &app_style::bar_style };
         xgui::button  cmdHelp   = { &button_bar, {.w = 130, .h = 30}, "Help",   &app_style::button_flex, &app_style::button_style };
