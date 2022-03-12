@@ -21,12 +21,14 @@ namespace xgui
         
 
         virtual void render(xsdl::renderer& renderer, stylesheet* stylesheet) = 0;
-        virtual void on_event(const SDL_Event& event) = 0;
+        virtual void on_event(const SDL_Event& event, behavior* behavior) = 0;
 
-        virtual SDL_Rect update_layout(SDL_Rect new_rect, stylesheet* stylesheet)
+        virtual void init_layout(stylesheet* stylesheet)
+        {}
+
+        virtual void update_layout(SDL_Rect new_rect, stylesheet* stylesheet)
         {
             rect = new_rect;
-            return new_rect;
         }
     };
 
@@ -152,18 +154,18 @@ namespace xgui
             });
         }
 
-        void on_event(const SDL_Event& event) override
+        void on_event(const SDL_Event& event, behavior* behavior) override
         {
             each_while([&](auto& child)
             {
-                child.on_event(event);
+                child.on_event(event, behavior);
                 return true;
             });
         }
 
-        SDL_Rect update_layout(SDL_Rect new_rect, stylesheet* stylesheet) override
+        void update_layout(SDL_Rect new_rect, stylesheet* stylesheet) override
         {
-            SDL_Rect r = component::update_layout(new_rect, stylesheet);
+            component::update_layout(new_rect, stylesheet);
 
             const composite_style& s = style(stylesheet);
 
@@ -174,10 +176,10 @@ namespace xgui
             {
                 SDL_Rect rflex =
                 {
-                    .x = r.x + s.padding.left,
-                    .y = r.y + s.padding.top,
-                    .w = r.w - s.padding.left - s.padding.right,
-                    .h = r.h - s.padding.top - s.padding.bottom
+                    .x = rect.x + s.padding.left,
+                    .y = rect.y + s.padding.top,
+                    .w = rect.w - s.padding.left - s.padding.right,
+                    .h = rect.h - s.padding.top - s.padding.bottom
                 };
 
 
@@ -186,6 +188,8 @@ namespace xgui
 
                 each([&](auto& c)
                 {
+                    c.init_layout(stylesheet);
+
                     auto& f = c.flex(stylesheet);
                     
                     if(f.*mp_wheight == fixed)
@@ -215,7 +219,7 @@ namespace xgui
                         rflex.*mp_size -= cr.*mp_size;
                     }
 
-                    cr = c.update_layout(cr, stylesheet);
+                    c.update_layout(cr, stylesheet);
 
                     rflex.*mp_pos += cr.*mp_size + inner_padding;
                 });
@@ -235,8 +239,6 @@ namespace xgui
                     &flex_style::height,
                     s.padding.vertical
                 );
-            
-            return r;
         }
     };
     

@@ -30,10 +30,12 @@ namespace xgui
         std::string text;
         xsdl::texture text_texture = nullptr;
         button_state state;
+        lazy_fun_ref<behavior, void()> on_click = nullptr;
 
         button(composite* parent, SDL_Rect rect, std::string text,
               lazy_ref<stylesheet, flex_style> flex,
-              lazy_ref<stylesheet, button_style> style)
+              lazy_ref<stylesheet, button_style> style,
+              lazy_fun_ref<behavior, void()> on_click)
         {
             if(parent) parent->add_child(this);
             this->flex = flex;
@@ -42,6 +44,7 @@ namespace xgui
             this->text = std::move(text);
             this->text_texture = nullptr;
             this->state = button_state::normal;
+            this->on_click = on_click;
         }
 
         void render(xsdl::renderer& renderer, stylesheet* stylesheet)
@@ -84,7 +87,7 @@ namespace xgui
 
 
 
-        void on_event(const SDL_Event& event)
+        void on_event(const SDL_Event& event, behavior* behavior) override
         {
             using namespace event_util;
             if(is_mouse_event(event))
@@ -96,6 +99,12 @@ namespace xgui
 
                 if(has_mouse)
                 {
+                    if(state == button_state::down && left_button && event.type == SDL_MOUSEBUTTONUP)
+                    {
+                        std::cout << "Click\n";
+                        if(on_click) on_click(behavior);
+                    }
+
                     state = button_state::hover;
 
                     if(left_button && event.type != SDL_MOUSEBUTTONUP)

@@ -9,6 +9,22 @@
 
 namespace gnote
 {
+    struct app_behavior : xgui::behavior
+    {
+        void cmdHelp()
+        {}
+
+        void cmdOK()
+        {}
+
+        void cmdCancel()
+        {
+            run = false;
+        }
+    };
+
+
+
     struct app_style : xgui::stylesheet
     {
         xsdl::font button_font = xsdl::font::load("fonts/DejaVuSans.ttf", 14);
@@ -86,14 +102,14 @@ namespace gnote
         {}
 
 
-        xgui::label   lblTitle   = { this, {.h = 50}, "Sample program",   &app_style::label_flex,    &app_style::big_label_style };
+        xgui::label   lblTitle   = { this, {.h = 50}, "Sample program",   &app_style::label_flex,   &app_style::big_label_style };
         xgui::textbox txtTextbox = { this, {},        "Sample Text",      &app_style::textbox_flex, &app_style::textbox_style };
 
         xgui::composite button_bar = { this, {.h = 30}, &app_style::bar_flex, &app_style::bar_style };
-        xgui::button  cmdHelp   = { &button_bar, {.w = 130, .h = 30}, "Help",   &app_style::button_flex, &app_style::button_style };
+        xgui::button  cmdHelp   = { &button_bar, {.w = 130, .h = 30}, "Help",   &app_style::button_flex, &app_style::button_style, &app_behavior::cmdHelp };
         xgui::spacer  spcSpacer = { &button_bar, {}, &app_style::spacer_flex };
-        xgui::button  cmdOK     = { &button_bar, {.w = 130, .h = 30}, "OK",     &app_style::button_flex, &app_style::button_style_highlight };
-        xgui::button  cmdCancel = { &button_bar, {.w = 130, .h = 30}, "Cancel", &app_style::button_flex, &app_style::button_style };
+        xgui::button  cmdOK     = { &button_bar, {.w = 130, .h = 30}, "OK",     &app_style::button_flex, &app_style::button_style_highlight, &app_behavior::cmdOK };
+        xgui::button  cmdCancel = { &button_bar, {.w = 130, .h = 30}, "Cancel", &app_style::button_flex, &app_style::button_style, &app_behavior::cmdCancel };
     };
     
     struct app_base
@@ -123,6 +139,7 @@ namespace gnote
         }
 
 
+        app_behavior behavior {};
         app_style styles {};
         app_ui ui { nullptr };
 
@@ -145,11 +162,12 @@ namespace gnote
                 if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) return;
                 if(event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED)
                 {
-                    auto[w, h] = the_app.window.size();
-                    the_app.ui.update_layout({0, 0, w, h}, &the_app.styles);
+                    auto[w1, h1] = the_app.window.size();
+                    the_app.ui.update_layout({0, 0, w1, h1}, &the_app.styles);
                 }
                 
-                the_app.ui.on_event(event);
+                the_app.ui.on_event(event, &the_app.behavior);
+                if(!the_app.behavior.run) return;
             }
             
             the_app.renderer.draw_color({30, 30, 30, 0xff});

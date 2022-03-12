@@ -21,7 +21,7 @@ namespace xgui
         {}
 
 
-        void on_event(const SDL_Event& event)
+        void on_event(const SDL_Event& event, behavior* behavior) override
         {}
     };
 }

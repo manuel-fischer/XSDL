@@ -111,6 +111,32 @@ namespace xgui
     };
     #endif
 
+    template<class B, class FN>
+    struct lazy_fun_ref;
+
+    template<class B, class Ret, class... Args>
+    struct lazy_fun_ref<B, Ret(Args...)>
+    {
+        Ret(B::* ptr)(Args...);
+
+        constexpr lazy_fun_ref(lazy_fun_ref const&) = default;
+
+        constexpr lazy_fun_ref(std::nullptr_t):
+            ptr(nullptr)
+        {}
+        
+        template<class C>
+        constexpr lazy_fun_ref(Ret(C::* mp)(Args...)):
+            ptr(reinterpret_cast<Ret(B::*)(Args...)>(mp))
+        {}
+
+        constexpr operator bool() const { return ptr != nullptr; }
+
+        Ret operator()(B* b, Args... args)
+        {
+            return (b->*ptr)(std::forward<Args>(args)...);
+        }
+    };
 
     namespace event_util
     {
@@ -136,6 +162,13 @@ namespace xgui
                 : event.button.button == button;
         }
     }
+
+
+    // Base class: typesafe
+    struct behavior
+    {
+        bool run = true;
+    };
 
 
     // Base class: typesafe

@@ -8,7 +8,7 @@ namespace xsdl
 {
     struct gl_context
     {
-        XSDL_DECLARE_MANAGED(gl_context, SDL_GLContext, SDL_GL_DeleteContext)
+        XSDL_DECLARE_MANAGED4(gl_context, SDL_GLContext, SDL_GLContext, SDL_GL_DeleteContext)
 
         gl_context(window&);
 

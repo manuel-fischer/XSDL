@@ -66,7 +66,7 @@ namespace xsdl
     }
 
 
-    #define XSDL_DECLARE_MANAGED(clsname, ptr_type, destroy_function) \
+    #define XSDL_DECLARE_MANAGED4(clsname, ptr_type, const_ptr_type, destroy_function) \
         ptr_type ptr; \
         ~clsname() noexcept { destroy_function(ptr); } \
         clsname(clsname&& other): ptr(std::exchange(other.ptr, nullptr)) {} \
@@ -74,9 +74,12 @@ namespace xsdl
         clsname(const clsname&) = delete; \
         clsname(ptr_type p): ptr(p) {} \
         ptr_type get() { return ptr; } \
+        const_ptr_type get() const { return ptr; } \
         ptr_type get_noconst() const { return ptr; } \
         operator bool() const { return ptr != nullptr; }
 
+    #define XSDL_DECLARE_MANAGED(clsname, ptr_type, destroy_function) \
+        XSDL_DECLARE_MANAGED4(clsname, ptr_type, const ptr_type, destroy_function)
 
     template<class T>
     auto opt2ptr(std::optional<T>& opt) -> T*
@@ -108,7 +111,7 @@ namespace xsdl
         XSDL_DECLARE_MANAGED(renderer, SDL_Renderer*, SDL_DestroyRenderer)
 
         renderer(window&, int index, flags);
-        renderer(window& window, flags flags): renderer(window, -1, flags) {}
+        renderer(window& window, flags renderer_flags): renderer(window, -1, renderer_flags) {}
         renderer(surface&);
 
 
@@ -124,14 +127,38 @@ namespace xsdl
 
 
 
+
+    struct pixel_view
+    {
+        int w, h;
+        int pitch;
+        SDL_Color* pixels;
+
+        SDL_Point size() const noexcept;
+
+        SDL_Color  operator()(int x, int y) const noexcept;
+        SDL_Color& operator()(int x, int y) noexcept;
+
+        void fill(color fill_color, SDL_Rect rect) noexcept;
+    };
+
     struct surface
     {
         XSDL_DECLARE_MANAGED(surface, SDL_Surface*, SDL_FreeSurface)
 
-        static surface load(const char* filename);
-        static surface from_data(size_t w, size_t h, const color* data);
+        static surface load_raw(const char* filename);
+        static surface load(const char* filename, uint32_t format=SDL_PIXELFORMAT_RGBA32);
+        static surface create(int width, int height, int depth,
+                              uint32_t Rmask, uint32_t Gmask, uint32_t Bmask, uint32_t Amask);
+
+        static surface create(int width, int height, int depth=32, uint32_t format=SDL_PIXELFORMAT_RGBA32);
+
+        surface convert_copy(uint32_t format=SDL_PIXELFORMAT_RGBA32) const;
+        surface convert(uint32_t format=SDL_PIXELFORMAT_RGBA32) &&;
 
         SDL_Point size() const noexcept;
+        bool is32() const noexcept;
+        pixel_view pixels32() const noexcept;
     };
 
     struct painter
@@ -217,17 +244,17 @@ namespace xsdl
 
 
 
-    inline sdl::sdl(flags flags)
+    inline sdl::sdl(flags init_flags)
     {
-        if(SDL_Init(flags) < 0) throw_sdl_exception("SDL_Init");
+        if(SDL_Init(init_flags) < 0) throw_sdl_exception("SDL_Init");
         active = true;
     }
     inline sdl::~sdl() noexcept { if(active) SDL_Quit(); }
 
 
-    inline sdl_image::sdl_image(flags flags)
+    inline sdl_image::sdl_image(flags init_flags)
     {
-        if(IMG_Init(flags) < 0) throw_sdl_exception("IMG_Init");
+        if(IMG_Init(init_flags) < 0) throw_sdl_exception("IMG_Init");
         active = true;
     }
     inline sdl_image::~sdl_image() noexcept { if(active) IMG_Quit(); }
@@ -242,20 +269,72 @@ namespace xsdl
     }
 
 
+
     
-    inline surface surface::load(const char* filename)
+    SDL_Point pixel_view::size() const noexcept
+    {
+        return {w, h};
+    }
+
+    SDL_Color  pixel_view::operator()(int x, int y) const noexcept
+    {
+        return pixels[x + pitch*y];
+    }
+
+    SDL_Color& pixel_view::operator()(int x, int y) noexcept
+    {
+        return pixels[x + pitch*y];
+    }
+    
+    void pixel_view::fill(color fill_color, SDL_Rect rect) noexcept
+    {
+        int index = rect.x + pitch*rect.y;
+        for(int y = 0; y < rect.h; ++y, index += pitch)
+        for(int x = 0; x < rect.w; ++x)
+        {
+            pixels[index + x] = fill_color;
+        }
+    }
+    
+
+
+    surface surface::convert_copy(uint32_t format) const
+    {
+        return surface(err_check(SDL_ConvertSurfaceFormat(get_noconst(), format, 0), "SDL_ConvertSurfaceFormat"));
+    }
+
+    surface surface::convert(uint32_t format) &&
+    {
+        if(get()->format->format != format)
+        {
+            return convert_copy(format);
+        }
+
+        return std::move(*this);
+    }
+
+    
+    inline surface surface::load_raw(const char* filename)
     {
         return surface(err_check(IMG_Load(filename), "IMG_Load"));
     }
 
-    
-    inline surface surface::from_data(size_t w, size_t h, const color* data)
+    inline surface surface::load(const char* filename, uint32_t format)
     {
-        return surface(err_check(SDL_CreateRGBSurfaceFrom(const_cast<color*>(data), w, h, 32, 4*w,
-                                                          color::red_mask,
-                                                          color::grn_mask,
-                                                          color::blu_mask,
-                                                          color::alp_mask), "SDL_CreateRGBSurfaceFrom"));
+        return load_raw(filename).convert(format);
+    }
+    
+    inline surface surface::create(int width, int height, int depth,
+                                   uint32_t Rmask, uint32_t Gmask, uint32_t Bmask, uint32_t Amask)
+    {
+        return surface(err_check(SDL_CreateRGBSurface(0, width, height, depth,
+                                                      Rmask, Gmask, Bmask, Amask), "SDL_CreateRGBSurface"));
+    }
+
+    inline surface surface::create(int width, int height, int depth, uint32_t format)
+    {
+        return surface(err_check(SDL_CreateRGBSurfaceWithFormat(0, width, height, depth,
+                                                                format), "SDL_CreateRGBSurface"));
     }
 
     inline SDL_Point surface::size() const noexcept
@@ -263,16 +342,27 @@ namespace xsdl
         return {ptr->w, ptr->h};
     }
 
+    inline bool surface::is32() const noexcept
+    {
+        return get()->format->format == SDL_PIXELFORMAT_RGBA32;
+    }
 
-    inline window::window(char* title, int x, int y, int w, int h, flags flags):
-        ptr(err_check(SDL_CreateWindow(title, x, y, w, h, flags), "SDL_CreateWindow"))
+    inline pixel_view surface::pixels32() const noexcept
+    {
+        SDL_assert(is32());
+
+        return { get()->w, get()->h, get()->pitch, (SDL_Color*)get()->pixels };
+    }
+
+    inline window::window(char* title, int x, int y, int w, int h, flags window_flags):
+        ptr(err_check(SDL_CreateWindow(title, x, y, w, h, window_flags), "SDL_CreateWindow"))
     {}
 
 
 
 
-    inline renderer::renderer(window& window, int index, flags flags):
-        ptr(err_check(SDL_CreateRenderer(window.get(), index, flags), "SDL_CreateRenderer"))
+    inline renderer::renderer(window& window, int index, flags renderer_flags):
+        ptr(err_check(SDL_CreateRenderer(window.get(), index, renderer_flags), "SDL_CreateRenderer"))
     {}
 
     inline renderer::renderer(surface& surface):
@@ -344,7 +434,7 @@ namespace xsdl
 
 
 
-    inline std::pair<window, renderer> create_window_and_renderer(int w, int h, flags flags, std::initializer_list<sdl_hint> hints)
+    inline std::pair<window, renderer> create_window_and_renderer(int w, int h, flags window_flags, std::initializer_list<sdl_hint> hints)
     {
         for(sdl_hint hint : hints)
             SDL_SetHint(hint.name, hint.value);
@@ -352,7 +442,7 @@ namespace xsdl
         SDL_Window* window;
         SDL_Renderer* renderer;
 
-        if(SDL_CreateWindowAndRenderer(w, h, flags, &window, &renderer) < 0)
+        if(SDL_CreateWindowAndRenderer(w, h, window_flags, &window, &renderer) < 0)
             throw_sdl_exception("SDL_CreateWindowAndRenderer");
         
         return { window, renderer };

@@ -54,7 +54,7 @@ namespace xgui
             text_texture = nullptr;
         }
 
-        void on_event(const SDL_Event& event)
+        void on_event(const SDL_Event& event, behavior* behavior) override
         {}
     };
 }

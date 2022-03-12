@@ -38,20 +38,23 @@ namespace xsdl
     };*/
 
 
-    inline pen pen::create_pen(class renderer& renderer, color color, int width, bool premultiply)
+    inline pen pen::create_pen(class renderer& renderer, color pen_color, int width, bool premultiply)
     {
-        std::vector<class color> line_pixels(width+2, color.premultiply_if(premultiply));
-        line_pixels.front() = line_pixels.back() = (class color){color.r, color.g, color.b, 0}.premultiply_if(premultiply);
+        xsdl::surface s = surface::create(1, width+2);
+        xsdl::pixel_view v = s.pixels32();
+
+        v.fill(pen_color.premultiply_if(premultiply), {0, 1, 0, width+1});
+        v(0, 0) = v(0, width+1) = color{pen_color.r, pen_color.g, pen_color.b, 0}.premultiply_if(premultiply);
 
         return pen{
             .the_renderer = &renderer,
             .internal_width = width+2,
-            .line_crosssection = texture(renderer, xsdl::surface::from_data(1, line_pixels.size(), line_pixels.data()))
+            .line_crosssection = texture(renderer, s)
         };
     }
 
     
-    inline pen pen::create_smooth_pen(class renderer& renderer, color color, int width, bool premultiply)
+    inline pen pen::create_smooth_pen(class renderer& renderer, color pen_color, int width, bool premultiply)
     {
         // 1+x^4 - 2x^2
         long long max = (width)*(width);
@@ -61,18 +64,22 @@ namespace xsdl
             return max*max + x2*x2 - 2*x2*max;
         };
 
+        
+        xsdl::surface s = surface::create(1, width+2);
+        xsdl::pixel_view v = s.pixels32();
+
         std::vector<class color> line_pixels(width+2);
-        for(int i = 1; i < width+1; ++i)
+        for(int y = 1; y < width+1; ++y)
         {
-            int alpha = fn(i*2-(width+2)+1)*color.a / (max*max);
-            line_pixels[i] = (class color){color.r, color.g, color.b, uint8_t(alpha)}.premultiply_if(premultiply);
+            int alpha = fn(y*2-(width+2)+1)*pen_color.a / (max*max);
+            v(0, y) = color{pen_color.r, pen_color.g, pen_color.b, uint8_t(alpha)}.premultiply_if(premultiply);
         }
-        line_pixels.front() = line_pixels.back() = (class color){color.r, color.g, color.b, 0}.premultiply_if(premultiply);
+        v(0, 0) = v(0, width+1) = color{pen_color.r, pen_color.g, pen_color.b, 0}.premultiply_if(premultiply);
 
         return pen{
             .the_renderer = &renderer,
             .internal_width = width+2,
-            .line_crosssection = texture(renderer, xsdl::surface::from_data(1, line_pixels.size(), line_pixels.data()))
+            .line_crosssection = texture(renderer, s)
         };
     }
 
