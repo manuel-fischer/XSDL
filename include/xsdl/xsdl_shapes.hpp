@@ -62,7 +62,7 @@ namespace xsdl
         };
 
         std::vector<class color> line_pixels(width+2);
-        for(size_t i = 1; i < width+1; ++i)
+        for(int i = 1; i < width+1; ++i)
         {
             int alpha = fn(i*2-(width+2)+1)*color.a / (max*max);
             line_pixels[i] = (class color){color.r, color.g, color.b, uint8_t(alpha)}.premultiply_if(premultiply);

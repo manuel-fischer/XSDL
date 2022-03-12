@@ -151,9 +151,6 @@ namespace gnote
                 
                 the_app.ui.on_event(event);
             }
-
-
-            auto[w, h] = the_app.window.size();
             
             the_app.renderer.draw_color({30, 30, 30, 0xff});
             the_app.renderer.clear();

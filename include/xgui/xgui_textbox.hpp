@@ -49,7 +49,6 @@ namespace xgui
                 text_texture = xsdl::texture(renderer, s.font->blended(text.c_str(), s.foreground));
             }
 
-            int mx2 = rect.x*2+rect.w;
             int my2 = rect.y*2+rect.h;
             auto[tw, th] = text_texture.size();
             SDL_Rect r {
